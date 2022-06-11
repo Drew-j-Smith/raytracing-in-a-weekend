@@ -1,7 +1,9 @@
 #pragma once
 
 #include <array>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 
 using std::sqrt;
@@ -16,6 +18,13 @@ public:
     constexpr double x() const { return data[0]; }
     constexpr double y() const { return data[1]; }
     constexpr double z() const { return data[2]; }
+
+    constexpr vec3 &operator-() {
+        data[0] = -data[0];
+        data[1] = -data[1];
+        data[2] = -data[2];
+        return *this;
+    }
 
     constexpr vec3 operator-() const {
         return vec3(-data[0], -data[1], -data[2]);
@@ -85,7 +94,24 @@ public:
                     u.data[0] * v.data[1] - u.data[1] * v.data[0]);
     }
 
-    friend vec3 unit_vector(vec3 v) { return v / v.length(); }
+    constexpr friend vec3 unit_vector(vec3 v) {
+        if (std::is_constant_evaluated()) {
+            // uses fast inverse sqrt for constant evaluated contexts
+            float num = v.length_squared();
+            constexpr auto threehalfs = 1.5f;
+            const auto x2 = num * 0.5f;
+
+            auto i = std::bit_cast<uint32_t>(num);
+            i = 0x5f3759df - (i >> 1);
+            float y = std::bit_cast<float>(i);
+
+            y = y * (threehalfs - (x2 * y * y));
+            y = y * (threehalfs - (x2 * y * y));
+            return v * y;
+        } else {
+            return v / v.length();
+        }
+    }
 };
 
 using point3 = vec3; // 3D point
