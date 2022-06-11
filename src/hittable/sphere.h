@@ -6,18 +6,18 @@
 class sphere : public hittable {
 public:
     constexpr sphere() {}
-    constexpr sphere(point3 cen, double r) : center(cen), radius(r){};
+    constexpr sphere(point3 cen, double r) : center(cen), radius(r) {}
 
-    constexpr virtual hit_record hit(const ray &r, double t_min,
-                                     double t_max) const override;
+    constexpr virtual std::optional<hit_record>
+    hit(const ray &r, double t_min, double t_max) const override;
 
 public:
     point3 center{};
     double radius{};
 };
 
-constexpr hit_record sphere::hit(const ray &r, double t_min,
-                                 double t_max) const {
+constexpr std::optional<hit_record> sphere::hit(const ray &r, double t_min,
+                                                double t_max) const {
     vec3 oc = r.origin() - center;
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -25,7 +25,7 @@ constexpr hit_record sphere::hit(const ray &r, double t_min,
 
     auto discriminant = half_b * half_b - a * c;
     if (discriminant < 0)
-        return hit_record(false);
+        return std::optional<hit_record>{};
     auto sqrtd = sqrt(discriminant);
 
     // Find the nearest root that lies in the acceptable range.
@@ -33,14 +33,14 @@ constexpr hit_record sphere::hit(const ray &r, double t_min,
     if (root < t_min || t_max < root) {
         root = (-half_b + sqrtd) / a;
         if (root < t_min || t_max < root)
-            return hit_record(false);
+            return std::optional<hit_record>{};
     }
 
-    auto rec = hit_record(true);
+    hit_record rec;
     rec.t = root;
     rec.p = r.at(rec.t);
     rec.normal = (rec.p - center) / radius;
     vec3 outward_normal = (rec.p - center) / radius;
     rec.set_face_normal(r, outward_normal);
-    return rec;
+    return std::optional<hit_record>{rec};
 }

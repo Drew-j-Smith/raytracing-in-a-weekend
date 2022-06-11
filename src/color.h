@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-void write_color(std::ostream &out, const color &pixel_color) {
+static void write_color(std::ostream &out, const color &pixel_color) {
     // Write the translated [0,255] value of each color component.
     out << static_cast<int>(255.999 * pixel_color.x()) << ' '
         << static_cast<int>(255.999 * pixel_color.y()) << ' '

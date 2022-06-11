@@ -20,21 +20,23 @@ public:
         objects.push_back(std::move(object));
     }
 
-    constexpr virtual hit_record hit(const ray &r, double t_min,
-                                     double t_max) const override;
+    constexpr virtual std::optional<hit_record>
+    hit(const ray &r, double t_min, double t_max) const override;
 
 private:
     vector<unique_ptr<hittable>> objects{};
 };
 
-constexpr hit_record hittable_list::hit(const ray &r, double t_min,
-                                        double t_max) const {
-    hit_record current_closest(false, t_max);
+constexpr std::optional<hit_record>
+hittable_list::hit(const ray &r, double t_min, double t_max) const {
+    double clostest_t = t_max;
+    std::optional<hit_record> current;
 
     for (const auto &object : objects) {
-        if (hit_record record = object->hit(r, t_min, current_closest.t)) {
-            current_closest = record;
+        if (auto record = object->hit(r, t_min, clostest_t)) {
+            current = record.value();
+            clostest_t = current->t;
         }
     }
-    return current_closest;
+    return current;
 }

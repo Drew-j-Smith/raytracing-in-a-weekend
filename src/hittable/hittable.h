@@ -1,13 +1,9 @@
 #pragma once
 
 #include "ray.h"
+#include <optional>
 
 struct hit_record {
-    constexpr hit_record() {}
-    constexpr hit_record(bool hit) : hit(hit) {}
-    constexpr hit_record(bool hit, double t) : hit(hit), t(t) {}
-
-    bool hit{};
     point3 p{};
     vec3 normal{};
     double t{};
@@ -17,13 +13,11 @@ struct hit_record {
         front_face = dot(r.direction(), outward_normal) < 0;
         normal = front_face ? outward_normal : -outward_normal;
     }
-
-    constexpr operator bool() const { return hit; }
 };
 
 class hittable {
 public:
     constexpr virtual ~hittable() = default;
-    constexpr virtual hit_record hit(const ray &r, double t_min,
-                                     double t_max) const = 0;
+    constexpr virtual std::optional<hit_record> hit(const ray &r, double t_min,
+                                                    double t_max) const = 0;
 };

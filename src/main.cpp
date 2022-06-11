@@ -8,8 +8,8 @@
 #include <iostream>
 
 constexpr color ray_color(const ray &r, const hittable &world) {
-    if (hit_record rec = world.hit(r, 0, infinity)) {
-        return 0.5 * (rec.normal + color(1, 1, 1));
+    if (auto rec = world.hit(r, 0, infinity)) {
+        return 0.5 * (rec->normal + color(1, 1, 1));
     }
     vec3 unit_direction = unit_vector(r.direction());
     auto t = 0.5 * (unit_direction.y() + 1.0);

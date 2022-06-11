@@ -29,8 +29,8 @@ public:
     constexpr vec3 operator-() const {
         return vec3(-data[0], -data[1], -data[2]);
     }
-    constexpr double operator[](int i) const { return data[i]; }
-    constexpr double &operator[](int i) { return data[i]; }
+    constexpr double operator[](std::size_t i) const { return data[i]; }
+    constexpr double &operator[](std::size_t i) { return data[i]; }
 
     constexpr vec3 &operator+=(const vec3 &v) {
         data[0] += v.data[0];
@@ -97,7 +97,7 @@ public:
     constexpr friend vec3 unit_vector(vec3 v) {
         if (std::is_constant_evaluated()) {
             // uses fast inverse sqrt for constant evaluated contexts
-            float num = v.length_squared();
+            float num = static_cast<float>(v.length_squared());
             constexpr auto threehalfs = 1.5f;
             const auto x2 = num * 0.5f;
 
@@ -107,7 +107,7 @@ public:
 
             y = y * (threehalfs - (x2 * y * y));
             y = y * (threehalfs - (x2 * y * y));
-            return v * y;
+            return v * static_cast<double>(y);
         } else {
             return v / v.length();
         }
