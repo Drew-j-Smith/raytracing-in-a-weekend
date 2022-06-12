@@ -10,8 +10,7 @@
 
 #include <iostream>
 
-[[nodiscard]] constexpr color ray_color(const ray &r, const hittable &world,
-                                        int depth) {
+[[nodiscard]] color ray_color(const ray &r, const hittable &world, int depth) {
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0) {
         return color(0, 0, 0);
@@ -20,11 +19,9 @@
     constexpr auto one_half = 0.5;
     constexpr auto seven_tenths = 0.7;
     constexpr auto t_min = 0.001;
-    if (auto rec = world.hit(r, t_min, infinity)) {
-        ray scattered;
-        color attenuation;
-        if (rec->mat_ptr->scatter(r, rec.value(), attenuation, scattered)) {
-            return attenuation * ray_color(scattered, world, depth - 1);
+    if (auto rec = world.hit(r, t_min, infinity); rec.didHit) {
+        if (rec.didScatter) {
+            return rec.attenuation * ray_color(rec.scatter, world, depth - 1);
         }
         return color(0, 0, 0);
     }
@@ -42,19 +39,19 @@ int main() {
 
     vector<unique_ptr<hittable>> hittables{};
 
-    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    auto material_center = make_shared<lambertian>(color(0.7, 0.3, 0.3));
-    auto material_left = make_shared<metal>(color(0.8, 0.8, 0.8));
-    auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2));
+    auto material_ground = lambertian(color(0.8, 0.8, 0.0));
+    auto material_center = lambertian(color(0.7, 0.3, 0.3));
+    auto material_left = metal(color(0.8, 0.8, 0.8));
+    auto material_right = metal(color(0.8, 0.6, 0.2));
 
-    hittables.push_back(
-        make_unique<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground));
-    hittables.push_back(
-        make_unique<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center));
-    hittables.push_back(
-        make_unique<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
-    hittables.push_back(
-        make_unique<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
+    hittables.push_back(make_unique<sphere<lambertian>>(
+        point3(0.0, -100.5, -1.0), 100.0, material_ground));
+    hittables.push_back(make_unique<sphere<lambertian>>(point3(0.0, 0.0, -1.0),
+                                                        0.5, material_center));
+    hittables.push_back(make_unique<sphere<metal>>(point3(-1.0, 0.0, -1.0), 0.5,
+                                                   material_left));
+    hittables.push_back(make_unique<sphere<metal>>(point3(1.0, 0.0, -1.0), 0.5,
+                                                   material_right));
     hittable_list world(std::move(hittables));
 
     camera cam;

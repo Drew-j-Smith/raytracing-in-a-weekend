@@ -7,19 +7,15 @@ struct hit_record;
 class material {
 public:
     constexpr virtual ~material() = default;
-    [[nodiscard]] virtual bool scatter(const ray &r_in, const hit_record &rec,
-                                       color &attenuation,
-                                       ray &scattered) const = 0;
+    virtual void scatter(const ray &r_in, hit_record &rec) const = 0;
 };
 
 class lambertian : public material {
 public:
     [[nodiscard]] constexpr lambertian(const color &a) : albedo(a) {}
 
-    [[nodiscard]] virtual bool scatter([[maybe_unused]] const ray &r_in,
-                                       const hit_record &rec,
-                                       color &attenuation,
-                                       ray &scattered) const override {
+    virtual void scatter([[maybe_unused]] const ray &r_in,
+                         hit_record &rec) const override {
         auto scatter_direction = rec.normal + random_unit_vector();
 
         // Catch degenerate scatter direction
@@ -27,10 +23,9 @@ public:
             scatter_direction = rec.normal;
         }
 
-        scattered = ray(rec.p, scatter_direction);
-        attenuation = albedo;
-
-        return true;
+        rec.scatter = ray(rec.p, scatter_direction);
+        rec.attenuation = albedo;
+        rec.didScatter = true;
     }
 
 private:
@@ -41,13 +36,12 @@ class metal : public material {
 public:
     [[nodiscard]] constexpr metal(const color &a) : albedo(a) {}
 
-    [[nodiscard]] virtual bool scatter(const ray &r_in, const hit_record &rec,
-                                       color &attenuation,
-                                       ray &scattered) const override {
+    constexpr virtual void scatter(const ray &r_in,
+                                   hit_record &rec) const override {
         vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-        scattered = ray(rec.p, reflected);
-        attenuation = albedo;
-        return (dot(scattered.direction(), rec.normal) > 0);
+        rec.scatter = ray(rec.p, reflected);
+        rec.attenuation = albedo;
+        rec.didScatter = dot(rec.scatter.direction(), rec.normal) > 0;
     }
 
 private:
