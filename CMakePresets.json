@@ -16,14 +16,24 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_CXX_CLANG_TIDY": "clang-tidy;-header-filter=.;-checks=-*,readability-*",
-                "CMAKE_CXX_FLAGS": "-O3 -Weverything -Weffc++ -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-shadow-field-in-constructor"
+                "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wshadow -Wno-shadow-field-in-constructor -Wnon-virtual-dtor -pedantic -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion"
+            }
+        },
+        {
+            "name": "clang-release",
+            "inherits": "clang",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_CLANG_TIDY": ""
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "msvc-debug",
+            "name": "msvc",
             "configurePreset": "msvc",
             "configuration": "Debug"
         },
@@ -35,6 +45,10 @@
         {
             "name": "clang",
             "configurePreset": "clang"
+        },
+        {
+            "name": "clang-release",
+            "configurePreset": "clang-release"
         }
     ]
 }
