@@ -1,9 +1,9 @@
 
-#include "rtweekend.h"
+#include "rtweekend.hpp"
 
-#include "color.h"
-#include "hittable/hittable_list.h"
-#include "hittable/sphere.h"
+#include "color.hpp"
+#include "hittable/hittable_list.hpp"
+#include "hittable/sphere.hpp"
 
 #include <iostream>
 

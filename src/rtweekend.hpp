@@ -24,5 +24,5 @@ constexpr double pi = 3.1415926535897932385;
 
 // Common Headers
 
-#include "ray.h"
-#include "vec3.h"
+#include "ray.hpp"
+#include "vec3.hpp"

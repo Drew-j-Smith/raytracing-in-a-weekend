@@ -1,8 +1,8 @@
 #pragma once
 
-#include "hittable.h"
+#include "hittable.hpp"
 
-#include <memory.h>
+#include <memory>
 #include <vector>
 
 using std::make_unique;
