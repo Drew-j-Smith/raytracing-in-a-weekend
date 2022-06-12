@@ -18,6 +18,6 @@ struct hit_record {
 class hittable {
 public:
     constexpr virtual ~hittable() = default;
-    constexpr virtual std::optional<hit_record> hit(const ray &r, double t_min,
-                                                    double t_max) const = 0;
+    [[nodiscard]] constexpr virtual std::optional<hit_record>
+    hit(const ray &r, double t_min, double t_max) const = 0;
 };

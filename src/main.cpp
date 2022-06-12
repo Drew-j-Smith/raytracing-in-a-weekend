@@ -7,23 +7,25 @@
 
 #include <iostream>
 
-constexpr color ray_color(const ray &r, const hittable &world) {
+[[nodiscard]] constexpr color ray_color(const ray &r, const hittable &world) {
+    constexpr auto one_half = 0.5;
+    constexpr auto seven_tenths = 0.7;
     if (auto rec = world.hit(r, 0, infinity)) {
-        return 0.5 * (rec->normal + color(1, 1, 1));
+        return one_half * (rec->normal + color(1, 1, 1));
     }
     vec3 unit_direction = unit_vector(r.direction());
-    auto t = 0.5 * (unit_direction.y() + 1.0);
-    return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
+    auto t = one_half * (unit_direction.y() + 1);
+    return (1.0 - t) * color(1, 1, 1) + t * color(one_half, seven_tenths, 1);
 }
 
 int main() {
-    const auto aspect_ratio = 16.0 / 9.0;
-    const int image_width = 400;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    constexpr auto aspect_ratio = 16.0 / 9.0;
+    constexpr int image_width = 400;
+    constexpr int image_height = static_cast<int>(image_width / aspect_ratio);
 
-    auto viewport_height = 2.0;
-    auto viewport_width = aspect_ratio * viewport_height;
-    auto focal_length = 1.0;
+    constexpr auto viewport_height = 2.0;
+    constexpr auto viewport_width = aspect_ratio * viewport_height;
+    constexpr auto focal_length = 1.0;
 
     hittable_list world;
     world.add(make_unique<sphere>(point3(0, 0, -1), 0.5));

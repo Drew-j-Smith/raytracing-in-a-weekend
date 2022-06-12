@@ -16,6 +16,7 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang",
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;-header-filter=.;-checks=-*,readability-*",
                 "CMAKE_CXX_FLAGS": "-O3 -Weverything -Weffc++ -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-shadow-field-in-constructor"
             }
         }

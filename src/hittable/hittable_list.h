@@ -11,8 +11,9 @@ using std::vector;
 
 class hittable_list : public hittable {
 public:
-    constexpr hittable_list() {}
-    constexpr hittable_list(vector<unique_ptr<hittable>> &&hittables)
+    [[nodiscard]] constexpr hittable_list() {}
+    [[nodiscard]] constexpr hittable_list(
+        vector<unique_ptr<hittable>> &&hittables)
         : objects(std::move(hittables)) {}
 
     constexpr void clear() { objects.clear(); }
@@ -20,14 +21,14 @@ public:
         objects.push_back(std::move(object));
     }
 
-    constexpr virtual std::optional<hit_record>
+    [[nodiscard]] constexpr virtual std::optional<hit_record>
     hit(const ray &r, double t_min, double t_max) const override;
 
 private:
     vector<unique_ptr<hittable>> objects{};
 };
 
-constexpr std::optional<hit_record>
+[[nodiscard]] constexpr std::optional<hit_record>
 hittable_list::hit(const ray &r, double t_min, double t_max) const {
     double clostest_t = t_max;
     std::optional<hit_record> current;

@@ -17,8 +17,9 @@ constexpr double pi = 3.1415926535897932385;
 
 // Utility Functions
 
-constexpr double degrees_to_radians(double degrees) {
-    return degrees * pi / 180.0;
+[[nodiscard]] constexpr double degrees_to_radians(double degrees) {
+    constexpr auto one_eighty = 180.0;
+    return degrees * pi / one_eighty;
 }
 
 // Common Headers
