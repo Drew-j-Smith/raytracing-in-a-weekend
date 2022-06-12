@@ -6,21 +6,27 @@
 #include "hittable/hittable_list.hpp"
 #include "hittable/sphere.hpp"
 
+#include "material/material.hpp"
+
 #include <iostream>
 
 [[nodiscard]] constexpr color ray_color(const ray &r, const hittable &world,
                                         int depth) {
     // If we've exceeded the ray bounce limit, no more light is gathered.
-    if (depth <= 0)
+    if (depth <= 0) {
         return color(0, 0, 0);
+    }
 
     constexpr auto one_half = 0.5;
     constexpr auto seven_tenths = 0.7;
     constexpr auto t_min = 0.001;
     if (auto rec = world.hit(r, t_min, infinity)) {
-        point3 target = rec->p + rec->normal + random_in_unit_sphere();
-        return one_half *
-               ray_color(ray(rec->p, target - rec->p), world, depth - 1);
+        ray scattered;
+        color attenuation;
+        if (rec->mat_ptr->scatter(r, rec.value(), attenuation, scattered)) {
+            return attenuation * ray_color(scattered, world, depth - 1);
+        }
+        return color(0, 0, 0);
     }
     vec3 unit_direction = unit_vector(r.direction());
     auto t = one_half * (unit_direction.y() + 1);
@@ -34,16 +40,31 @@ int main() {
     constexpr int samples_per_pixel = 100;
     constexpr int max_depth = 50;
 
-    hittable_list world;
-    world.add(make_unique<sphere>(point3(0, 0, -1), 0.5));
-    world.add(make_unique<sphere>(point3(0, -100.5, -1), 100));
+    vector<unique_ptr<hittable>> hittables{};
+
+    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    auto material_left = make_shared<metal>(color(0.8, 0.8, 0.8));
+    auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2));
+
+    hittables.push_back(
+        make_unique<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground));
+    hittables.push_back(
+        make_unique<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center));
+    hittables.push_back(
+        make_unique<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
+    hittables.push_back(
+        make_unique<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
+    hittable_list world(std::move(hittables));
 
     camera cam;
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     for (int j = image_height - 1; j >= 0; j--) {
-        std::cerr << "\rScan lines remaining: " << j << ' ';
+        if (j % 10 == 0) {
+            std::fprintf(stderr, "\rScan lines remaining: %d ", j);
+        }
         for (int i = 0; i < image_width; i++) {
             color pixel_color(0, 0, 0);
             for (int s = 0; s < samples_per_pixel; ++s) {

@@ -1,24 +1,26 @@
 #pragma once
 
 #include "hittable.hpp"
+#include "material/material.hpp"
 #include "vec3.hpp"
 
-class sphere : public hittable {
+class sphere final : public hittable {
 public:
     [[nodiscard]] constexpr sphere() {}
-    [[nodiscard]] constexpr sphere(point3 cen, double r)
-        : center(cen), radius(r) {}
+    [[nodiscard]] sphere(point3 cen, double r, shared_ptr<material> mat)
+        : center(cen), radius(r), mat(mat) {}
 
-    [[nodiscard]] constexpr virtual std::optional<hit_record>
+    [[nodiscard]] virtual std::optional<hit_record>
     hit(const ray &r, double t_min, double t_max) const override;
 
 private:
-    point3 center{};
-    double radius{};
+    const point3 center{};
+    const double radius{};
+    shared_ptr<material> mat{};
 };
 
-[[nodiscard]] constexpr std::optional<hit_record>
-sphere::hit(const ray &r, double t_min, double t_max) const {
+[[nodiscard]] std::optional<hit_record> sphere::hit(const ray &r, double t_min,
+                                                    double t_max) const {
     vec3 oc = r.origin() - center;
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -42,8 +44,8 @@ sphere::hit(const ray &r, double t_min, double t_max) const {
     hit_record rec;
     rec.t = root;
     rec.p = r.at(rec.t);
-    rec.normal = (rec.p - center) / radius;
     vec3 outward_normal = (rec.p - center) / radius;
     rec.set_face_normal(r, outward_normal);
+    rec.mat_ptr = mat.get();
     return std::optional<hit_record>{rec};
 }

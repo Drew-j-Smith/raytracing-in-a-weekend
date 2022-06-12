@@ -57,6 +57,13 @@ public:
         return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
     }
 
+    bool near_zero() const {
+        // Return true if the vector is close to zero in all dimensions.
+        const auto s = 1e-8;
+        return (fabs(data[0]) < s) && (fabs(data[1]) < s) &&
+               (fabs(data[2]) < s);
+    }
+
     friend std::ostream &operator<<(std::ostream &out, const vec3 &v) {
         return out << v.data[0] << ' ' << v.data[1] << ' ' << v.data[2];
     }
@@ -142,6 +149,23 @@ inline vec3 random_in_unit_sphere() {
         }
         return p;
     }
+}
+
+inline vec3 random_unit_vector() {
+    return unit_vector(random_in_unit_sphere());
+}
+
+vec3 random_in_hemisphere(const vec3 &normal) {
+    vec3 in_unit_sphere = random_in_unit_sphere();
+    if (dot(in_unit_sphere, normal) > 0.0) {
+        // In the same hemisphere as the normal
+        return in_unit_sphere;
+    }
+    return -in_unit_sphere;
+}
+
+[[nodiscard]] constexpr vec3 reflect(const vec3 &v, const vec3 &n) {
+    return v - 2 * dot(v, n) * n;
 }
 
 using point3 = vec3; // 3D point
