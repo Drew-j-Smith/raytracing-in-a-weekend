@@ -9,7 +9,7 @@ struct hit_record {
     vec3 normal{};
     double t{};
     color attenuation;
-    ray scatter;
+    ray scattered;
     bool front_face{};
     bool didHit{};
     bool didScatter{};
