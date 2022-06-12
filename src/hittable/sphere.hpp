@@ -16,7 +16,7 @@ public:
 private:
     const point3 center{};
     const double radius{};
-    mutable material_type_t mat{};
+    const material_type_t mat{};
 };
 
 template <class material_type_t>

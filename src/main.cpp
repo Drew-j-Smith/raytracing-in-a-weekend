@@ -41,8 +41,8 @@ int main() {
 
     auto material_ground = lambertian(color(0.8, 0.8, 0.0));
     auto material_center = lambertian(color(0.7, 0.3, 0.3));
-    auto material_left = metal(color(0.8, 0.8, 0.8));
-    auto material_right = metal(color(0.8, 0.6, 0.2));
+    auto material_left = metal(color(0.8, 0.8, 0.8), 0.3);
+    auto material_right = metal(color(0.8, 0.6, 0.2), 1.0);
 
     hittables.push_back(make_unique<sphere<lambertian>>(
         point3(0.0, -100.5, -1.0), 100.0, material_ground));

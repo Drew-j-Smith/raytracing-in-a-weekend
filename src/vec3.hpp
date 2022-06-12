@@ -57,9 +57,19 @@ public:
         return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
     }
 
-    bool near_zero() const {
+    [[nodiscard]] constexpr bool near_zero() const {
         // Return true if the vector is close to zero in all dimensions.
-        const auto s = 1e-8;
+        constexpr auto s = 1e-8;
+        if (std::is_constant_evaluated()) {
+            constexpr auto val_near_zero = [](double num) {
+                if (num > 0) {
+                    return num < s;
+                }
+                return num > -s;
+            };
+            return val_near_zero(data[0]) && val_near_zero(data[1]) &&
+                   val_near_zero(data[2]);
+        }
         return (fabs(data[0]) < s) && (fabs(data[1]) < s) &&
                (fabs(data[2]) < s);
     }
@@ -128,11 +138,11 @@ public:
         return v / v.length();
     }
 
-    inline static vec3 random() {
+    [[nodiscard]] inline static vec3 random() {
         return vec3(random_double(), random_double(), random_double());
     }
 
-    inline static vec3 random(double min, double max) {
+    [[nodiscard]] inline static vec3 random(double min, double max) {
         return vec3(random_double(min, max), random_double(min, max),
                     random_double(min, max));
     }
@@ -141,7 +151,7 @@ private:
     std::array<double, 3> data;
 };
 
-inline vec3 random_in_unit_sphere() {
+[[nodiscard]] inline vec3 random_in_unit_sphere() {
     while (true) {
         auto p = vec3::random(-1, 1);
         if (p.length_squared() >= 1) {
@@ -151,11 +161,11 @@ inline vec3 random_in_unit_sphere() {
     }
 }
 
-inline vec3 random_unit_vector() {
+[[nodiscard]] inline vec3 random_unit_vector() {
     return unit_vector(random_in_unit_sphere());
 }
 
-vec3 random_in_hemisphere(const vec3 &normal) {
+[[nodiscard]] vec3 random_in_hemisphere(const vec3 &normal) {
     vec3 in_unit_sphere = random_in_unit_sphere();
     if (dot(in_unit_sphere, normal) > 0.0) {
         // In the same hemisphere as the normal

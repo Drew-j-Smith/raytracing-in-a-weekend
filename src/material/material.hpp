@@ -10,7 +10,7 @@ public:
     virtual void scatter(const ray &r_in, hit_record &rec) const = 0;
 };
 
-class lambertian : public material {
+class lambertian final : public material {
 public:
     [[nodiscard]] constexpr lambertian(const color &a) : albedo(a) {}
 
@@ -32,18 +32,19 @@ private:
     const color albedo;
 };
 
-class metal : public material {
+class metal final : public material {
 public:
-    [[nodiscard]] constexpr metal(const color &a) : albedo(a) {}
+    [[nodiscard]] constexpr metal(const color &a, double f)
+        : albedo(a), fuzz(f < 1 ? f : 1) {}
 
-    constexpr virtual void scatter(const ray &r_in,
-                                   hit_record &rec) const override {
+    virtual void scatter(const ray &r_in, hit_record &rec) const override {
         vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-        rec.scatter = ray(rec.p, reflected);
+        rec.scatter = ray(rec.p, reflected + fuzz * random_in_unit_sphere());
         rec.attenuation = albedo;
         rec.didScatter = dot(rec.scatter.direction(), rec.normal) > 0;
     }
 
 private:
-    color albedo;
+    const color albedo;
+    const double fuzz;
 };
