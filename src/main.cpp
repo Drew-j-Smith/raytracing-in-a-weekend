@@ -50,10 +50,8 @@ int main() {
                                                         0.5, material_center));
     hittables.push_back(make_unique<sphere<dielectric>>(point3(-1.0, 0.0, -1.0),
                                                         0.5, material_left));
-    // hittables.push_back(make_unique<sphere<dielectric>>(point3(-1.0, 0.0,
-    // -1.0),
-    //                                                     -0.4,
-    //                                                     material_left));
+    hittables.push_back(make_unique<sphere<dielectric>>(point3(-1.0, 0.0, -1.0),
+                                                        -0.4, material_left));
     hittables.push_back(make_unique<sphere<metal>>(point3(1.0, 0.0, -1.0), 0.5,
                                                    material_right));
     hittable_list world(std::move(hittables));
