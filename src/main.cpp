@@ -37,21 +37,29 @@ int main() {
     constexpr int samples_per_pixel = 100;
     constexpr int max_depth = 50;
 
-    auto R = cos(pi / 4);
-
-    auto material_left = lambertian(color(0, 0, 1));
-    auto material_right = lambertian(color(1, 0, 0));
-
     auto hittables = std::vector<unique_ptr<hittable>>{};
-    hittables.push_back(
-        make_unique<sphere<lambertian>>(point3(-R, 0, -1), R, material_left));
-    hittables.push_back(
-        make_unique<sphere<lambertian>>(point3(R, 0, -1), R, material_right));
+
+    auto material_ground = lambertian(color(0.8, 0.8, 0.0));
+    auto material_center = lambertian(color(0.1, 0.2, 0.5));
+    auto material_left = dielectric(1.5);
+    auto material_right = metal(color(0.8, 0.6, 0.2), 0.0);
+
+    hittables.push_back(make_unique<sphere<lambertian>>(
+        point3(0.0, -100.5, -1.0), 100.0, material_ground));
+    hittables.push_back(make_unique<sphere<lambertian>>(point3(0.0, 0.0, -1.0),
+                                                        0.5, material_center));
+    hittables.push_back(make_unique<sphere<dielectric>>(point3(-1.0, 0.0, -1.0),
+                                                        0.5, material_left));
+    hittables.push_back(make_unique<sphere<dielectric>>(point3(-1.0, 0.0, -1.0),
+                                                        -0.45, material_left));
+    hittables.push_back(make_unique<sphere<metal>>(point3(1.0, 0.0, -1.0), 0.5,
+                                                   material_right));
     hittable_list world(std::move(hittables));
 
     // Camera
 
-    camera cam(90, aspect_ratio);
+    camera cam(point3(-2, 2, 1), point3(0, 0, -1), vec3(0, 1, 0), 20,
+               aspect_ratio);
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
