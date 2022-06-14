@@ -19,9 +19,13 @@
     constexpr auto one_half = 0.5;
     constexpr auto seven_tenths = 0.7;
     constexpr auto t_min = 0.001;
-    if (auto rec = world.hit(r, t_min, infinity); rec.didHit) {
-        if (rec.didScatter) {
-            return rec.attenuation * ray_color(rec.scattered, world, depth - 1);
+    hit_record temp_rec;
+    if (const auto &mat = world.hit(r, t_min, infinity, temp_rec);
+        temp_rec.didHit) {
+        ray scattered;
+        color attenuation;
+        if (mat.scatter(r, temp_rec, attenuation, scattered)) {
+            return attenuation * ray_color(scattered, world, depth - 1);
         }
         return color(0, 0, 0);
     }
@@ -83,11 +87,11 @@ hittable_list random_scene() {
 }
 
 int main() {
-    const auto aspect_ratio = 3.0 / 2.0;
-    const int image_width = 1200;
+    const auto aspect_ratio = 16.0 / 9.0;
+    const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 50;
-    const int max_depth = 10;
+    const int samples_per_pixel = 10;
+    const int max_depth = 50;
 
     // World
 

@@ -189,8 +189,9 @@ private:
 [[nodiscard]] inline vec3 random_in_unit_disk() {
     while (true) {
         auto p = vec3(random_double(-1, 1), random_double(-1, 1), 0);
-        if (p.length_squared() >= 1)
+        if (p.length_squared() >= 1) {
             continue;
+        }
         return p;
     }
 }

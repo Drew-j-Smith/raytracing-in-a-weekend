@@ -11,7 +11,7 @@ public:
     [[nodiscard]] constexpr auto origin() const { return orig; }
     [[nodiscard]] constexpr auto direction() const { return dir; }
 
-    [[nodiscard]] constexpr auto at(double t) const { return orig + dir * t; }
+    [[nodiscard]] constexpr auto at(double t) const { return orig + t * dir; }
 
 private:
     point3 orig;

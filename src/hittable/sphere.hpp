@@ -10,8 +10,8 @@ public:
     [[nodiscard]] sphere(point3 cen, double r, material_type_t mat)
         : center(cen), radius(r), mat(mat) {}
 
-    [[nodiscard]] constexpr virtual hit_record hit(const ray &r, double t_min,
-                                                   double t_max) const override;
+    [[nodiscard]] constexpr virtual const material &
+    hit(const ray &r, double t_min, double t_max, hit_record &rec) const;
 
 private:
     const point3 center{};
@@ -20,8 +20,9 @@ private:
 };
 
 template <class material_type_t>
-[[nodiscard]] constexpr hit_record
-sphere<material_type_t>::hit(const ray &r, double t_min, double t_max) const {
+[[nodiscard]] constexpr const material &
+sphere<material_type_t>::hit(const ray &r, double t_min, double t_max,
+                             hit_record &rec) const {
     vec3 oc = r.origin() - center;
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -29,7 +30,8 @@ sphere<material_type_t>::hit(const ray &r, double t_min, double t_max) const {
 
     auto discriminant = half_b * half_b - a * c;
     if (discriminant < 0) {
-        return hit_record{.didHit = false};
+        rec.didHit = false;
+        return mat;
     }
     auto sqrtd = sqrt(discriminant);
 
@@ -38,18 +40,16 @@ sphere<material_type_t>::hit(const ray &r, double t_min, double t_max) const {
     if (root < t_min || t_max < root) {
         root = (-half_b + sqrtd) / a;
         if (root < t_min || t_max < root) {
-            return hit_record{.didHit = false};
+            rec.didHit = false;
+            return mat;
         }
     }
 
-    hit_record rec;
     rec.didHit = true;
     rec.t = root;
     rec.p = r.at(rec.t);
     vec3 outward_normal = (rec.p - center) / radius;
     rec.set_face_normal(r, outward_normal);
 
-    mat.scatter(r, rec);
-
-    return rec;
+    return mat;
 }
