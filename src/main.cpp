@@ -1,6 +1,9 @@
 #include <array>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <streambuf>
 #include <vector>
 
 #include <CL/cl2.hpp>
@@ -14,7 +17,7 @@ void check_err(cl_int err) {
 
 using arr_int_type = uint64_t;
 
-int main() {
+int main([[maybe_unused]] int argc, char **argv) {
 
     constexpr auto arr_size = 1000;
 
@@ -35,13 +38,11 @@ int main() {
         cl::Buffer(queue, output.begin(), output.end(), false, false, &err);
     check_err(err);
 
-    cl::string source{
-        R"(void kernel mult(global const ulong* a, global ulong* b){
-    int id = get_global_id(0);
-    for (ulong i = 0; i < 10000000; ++i) {
-        b[id] = a[id] * a[id];
-    }
-})"};
+    std::filesystem::path exec_dir(argv[0]);
+    std::string cl_loc = exec_dir.parent_path().append("main.cl").string();
+    std::ifstream file(cl_loc);
+    std::string source((std::istreambuf_iterator<char>(file)),
+                       std::istreambuf_iterator<char>());
 
     cl::Program program(source, true, &err);
     check_err(err);
