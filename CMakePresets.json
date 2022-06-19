@@ -2,53 +2,54 @@
     "version": 4,
     "configurePresets": [
         {
-            "name": "msvc",
-            "generator": "Visual Studio 17 2022",
+            "name": "base",
             "binaryDir": "build/${presetName}",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wshadow -Wno-shadow-field-in-constructor -Wnon-virtual-dtor -pedantic -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion"
+            }
+        },
+        {
+            "name": "msvc",
+            "inherits": "base",
+            "generator": "Visual Studio 17 2022",
             "cacheVariables": {
                 "CMAKE_CXX_FLAGS": "/W4 /WX /permissive /analyze /EHsc"
             }
         },
         {
             "name": "clang",
-            "generator": "Ninja",
-            "binaryDir": "build/${presetName}",
+            "inherits": "base",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;-header-filter=.;-checks=-*,readability-*",
-                "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wshadow -Wno-shadow-field-in-constructor -Wnon-virtual-dtor -pedantic -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion"
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;-header-filter=.;-checks=-*,readability-*"
             }
         },
         {
-            "name": "clang-release",
-            "inherits": "clang",
+            "name": "gcc",
+            "inherits": "base",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_CLANG_TIDY": ""
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "gcc"
             }
         }
     ],
     "buildPresets": [
         {
             "name": "msvc",
-            "configurePreset": "msvc",
-            "configuration": "Debug"
-        },
-        {
-            "name": "msvc-release",
-            "configurePreset": "msvc",
-            "configuration": "Release"
+            "configurePreset": "msvc"
         },
         {
             "name": "clang",
             "configurePreset": "clang"
         },
         {
-            "name": "clang-release",
-            "configurePreset": "clang-release"
+            "name": "gcc",
+            "configurePreset": "gcc"
         }
     ]
 }
