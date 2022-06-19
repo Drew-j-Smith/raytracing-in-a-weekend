@@ -45,7 +45,14 @@ int main([[maybe_unused]] int argc, char **argv) {
                        std::istreambuf_iterator<char>());
 
     cl::Program program(source, true, &err);
-    check_err(err);
+    if (err != CL_SUCCESS) {
+        cl::BuildLogType log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(&err);
+        check_err(err);
+        for (const auto &pair : log) {
+            std::cout << pair.second << '\n';
+        }
+        return 0;
+    }
 
     cl::Kernel kernel_mult = cl::Kernel(program, "mult", &err);
     check_err(err);
