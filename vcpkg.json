@@ -2,6 +2,7 @@
     "name": "raytracing-ing-a-weekend",
     "version-string": "1.0.0",
     "dependencies": [
-        "opencl"
+        "opencl",
+        "spdlog"
     ]
 }

@@ -8,9 +8,12 @@
 
 #include <CL/cl2.hpp>
 
+#include <spdlog/spdlog.h>
+
 void check_err(cl_int err) {
     if (err != CL_SUCCESS) {
-        std::cerr << err << '\n';
+        spdlog::dump_backtrace();
+        spdlog::error("failed with error code: {}", err);
         throw std::runtime_error("");
     }
 }
@@ -21,9 +24,13 @@ int main([[maybe_unused]] int argc, char **argv) {
 
     constexpr auto arr_size = 1000;
 
+    spdlog::enable_backtrace(32);
+    spdlog::set_level(spdlog::level::debug);
+
     cl_int err;
     auto queue = cl::CommandQueue(CL_QUEUE_PROFILING_ENABLE, &err);
     check_err(err);
+    spdlog::debug("created CommandQueue");
 
     std::array<arr_int_type, arr_size> input;
     for (std::size_t i = 0; i < input.size(); ++i) {
@@ -37,6 +44,7 @@ int main([[maybe_unused]] int argc, char **argv) {
     auto outputBuff =
         cl::Buffer(queue, output.begin(), output.end(), false, false, &err);
     check_err(err);
+    spdlog::debug("created Buffers");
 
     std::filesystem::path exec_dir(argv[0]);
     std::string cl_loc = exec_dir.parent_path().append("main.cl").string();
@@ -49,10 +57,11 @@ int main([[maybe_unused]] int argc, char **argv) {
         cl::BuildLogType log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(&err);
         check_err(err);
         for (const auto &pair : log) {
-            std::cout << pair.second << '\n';
+            spdlog::error("{}", pair.second);
         }
         return 0;
     }
+    spdlog::debug("created and compliled Program");
 
     cl::Kernel kernel_mult = cl::Kernel(program, "mult", &err);
     check_err(err);
@@ -60,10 +69,10 @@ int main([[maybe_unused]] int argc, char **argv) {
     check_err(err);
     err = kernel_mult.setArg(1, outputBuff);
     check_err(err);
+    spdlog::debug("created Kernel");
+
     err = queue.enqueueNDRangeKernel(kernel_mult, cl::NullRange,
                                      cl::NDRange(arr_size), cl::NullRange);
-    check_err(err);
-    err = queue.finish();
     check_err(err);
 
     err = queue.enqueueReadBuffer(outputBuff, CL_TRUE, 0,
@@ -72,8 +81,10 @@ int main([[maybe_unused]] int argc, char **argv) {
     check_err(err);
 
     for (auto i : output) {
-        std::cout << i << '\n';
+        spdlog::debug("{}", i);
     }
+
+    spdlog::info("success");
 
     return 0;
 }
