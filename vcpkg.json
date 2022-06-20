@@ -3,6 +3,16 @@
     "version-string": "1.0.0",
     "dependencies": [
         "opencl",
-        "spdlog"
+        "spdlog",
+        {
+            "name": "imgui",
+            "default-features": true,
+            "features": [
+                "glfw-binding",
+                "opengl3-binding"
+            ]
+        },
+        "glfw3",
+        "glew"
     ]
 }

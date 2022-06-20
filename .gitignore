@@ -34,3 +34,5 @@
 build
 .vscode
 image.ppm
+
+imgui.ini
