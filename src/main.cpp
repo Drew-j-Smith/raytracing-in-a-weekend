@@ -129,10 +129,66 @@ int main([[maybe_unused]] int argc, char **argv) {
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
+    std::vector<uint8_t> temp(512 * 512 * 3, 255);
+    for (uint64_t i = 0; i < 512; ++i) {
+        for (uint64_t j = 0; j < 512; ++j) {
+            temp[i * 512 * 3 + j * 3] = i / 2;
+            temp[i * 512 * 3 + j * 3 + 1] = j / 2;
+            temp[i * 512 * 3 + j * 3 + 2] = (i + j) / 4;
+        }
+    }
+
+    auto errTest = []() {
+        GLenum err;
+        if ((err = glGetError()) != GL_NO_ERROR) {
+            throw new std::exception("");
+        }
+    };
+
+    glDebugMessageCallback(
+        [](GLenum source, GLenum type, GLuint id, GLenum severity,
+           GLsizei length, const GLchar *message,
+           const void *userParam) { spdlog::info("{}", message); },
+        nullptr);
+    glEnable(GL_DEBUG_OUTPUT);
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    errTest();
+    glBindTexture(GL_TEXTURE_2D, texture);
+    errTest();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 512, 512, 0, GL_RGB,
+                 GL_UNSIGNED_BYTE, nullptr);
+    errTest();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    errTest();
+
+    GLuint readFboId = 0;
+    glGenFramebuffers(1, &readFboId);
+    errTest();
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
+    errTest();
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, texture, 0);
+    errTest();
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    errTest();
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        int display_w;
+        int display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+
+        glTextureSubImage2D(texture, 0, 0, 0, 512, 512, GL_RGB,
+                            GL_UNSIGNED_BYTE, temp.data());
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
+        glBlitFramebuffer(0, 0, 512, 512, 0, 0, display_w, display_h,
+                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
         // feed inputs to dear imgui, start new frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -148,9 +204,6 @@ int main([[maybe_unused]] int argc, char **argv) {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        int display_w;
-        int display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glfwSwapBuffers(window);
     }
