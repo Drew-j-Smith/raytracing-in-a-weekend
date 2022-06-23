@@ -19,6 +19,8 @@
 #include <GLFW/glfw3.h>
 
 using arr_int_type = uint64_t;
+constexpr int windowStartWidth = 1280;
+constexpr int windowStartHeight = 720;
 
 int main([[maybe_unused]] int argc, char **argv) {
 
@@ -88,7 +90,7 @@ int main([[maybe_unused]] int argc, char **argv) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    if (!glfwInit()) {
+    if (glfwInit() != GLFW_TRUE) {
         spdlog::error("glfwInit failed");
         return 1;
     }
@@ -98,16 +100,15 @@ int main([[maybe_unused]] int argc, char **argv) {
     });
 
     // Create window with graphics context
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "test", NULL, NULL);
-    if (window == NULL) {
+    GLFWwindow *window = glfwCreateWindow(windowStartWidth, windowStartHeight,
+                                          "test", nullptr, nullptr);
+    if (window == nullptr) {
         spdlog::error("glfwCreateWindow failed");
         return 1;
     }
     glfwMakeContextCurrent(window);
 
-    bool err2 = glewInit() != GLEW_OK;
-
-    if (err2) {
+    if (glewInit() != GLEW_OK) {
         spdlog::error("Failed to initialize OpenGL loader!");
         return 1;
     }
@@ -127,18 +128,27 @@ int main([[maybe_unused]] int argc, char **argv) {
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
-    std::vector<uint8_t> temp(512 * 512 * 3, 255);
-    for (uint64_t i = 0; i < 512; ++i) {
-        for (uint64_t j = 0; j < 512; ++j) {
-            temp[i * 512 * 3 + j * 3] = i / 2;
-            temp[i * 512 * 3 + j * 3 + 1] = j / 2;
-            temp[i * 512 * 3 + j * 3 + 2] = (i + j) / 4;
+    constexpr int textureWidth = 512;
+    constexpr int textureHeight = 512;
+    constexpr int textureInitialColor = 255;
+    constexpr int packSize = 3;
+    std::vector<uint8_t> temp(textureWidth * textureHeight * packSize,
+                              textureInitialColor);
+    for (uint64_t i = 0; i < textureWidth; ++i) {
+        for (uint64_t j = 0; j < textureHeight; ++j) {
+            temp[i * textureWidth * packSize + j * packSize] =
+                static_cast<uint8_t>(i / 2);
+            temp[i * textureWidth * packSize + j * packSize + 1] =
+                static_cast<uint8_t>(j / 2);
+            temp[i * textureWidth * packSize + j * packSize + 2] =
+                static_cast<uint8_t>((i + j) / 4);
         }
     }
 
     glDebugMessageCallback(
         [](GLenum source, GLenum type, GLuint id, GLenum severity,
-           GLsizei length, const GLchar *message, const void *userParam) {
+           [[maybe_unused]] GLsizei length, const GLchar *message,
+           [[maybe_unused]] const void *userParam) {
             auto formated = fmt::format("opengl debug: source: {} type: {} id: "
                                         "{} severity: {}\n message: {}",
                                         source, type, id, severity, message);
@@ -163,8 +173,8 @@ int main([[maybe_unused]] int argc, char **argv) {
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 512, 512, 0, GL_RGB,
-                 GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, textureWidth, textureHeight, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, temp.data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLuint readFboId = 0;
@@ -174,20 +184,19 @@ int main([[maybe_unused]] int argc, char **argv) {
                            GL_TEXTURE_2D, texture, 0);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
-    while (!glfwWindowShouldClose(window)) {
+    while (glfwWindowShouldClose(window) != GLFW_TRUE) {
         glfwPollEvents();
-        glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         int display_w;
         int display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-        glTextureSubImage2D(texture, 0, 0, 0, 512, 512, GL_RGB,
-                            GL_UNSIGNED_BYTE, temp.data());
+        // if Changed
+        glTextureSubImage2D(texture, 0, 0, 0, textureWidth, textureHeight,
+                            GL_RGB, GL_UNSIGNED_BYTE, temp.data());
         glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
-        glBlitFramebuffer(0, 0, 512, 512, 0, 0, display_w, display_h,
-                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glBlitFramebuffer(0, 0, textureWidth, textureHeight, 0, 0, display_w,
+                          display_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
         // feed inputs to dear imgui, start new frame
@@ -197,8 +206,10 @@ int main([[maybe_unused]] int argc, char **argv) {
 
         // render your GUI
         ImGui::Begin("Demo window");
-        ImGui::ShowDemoWindow();
+        ImGui::Text("framerate %.2f", io.Framerate);
         ImGui::End();
+
+        ImGui::ShowDemoWindow();
 
         // Render dear imgui into screen
         ImGui::Render();
