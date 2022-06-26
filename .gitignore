@@ -36,3 +36,4 @@ build
 image.ppm
 
 imgui.ini
+CMakeUserPresets.json

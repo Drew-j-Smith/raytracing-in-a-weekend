@@ -16,7 +16,6 @@ add_executable(${PROJECT_NAME}  src/main.cpp)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CL_HPP_TARGET_OPENCL_VERSION=210)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE OpenCL::OpenCL spdlog::spdlog imgui::imgui glfw GLEW::GLEW)
-target_compile_definitions(${PROJECT_NAME} PRIVATE)
 
 
 add_custom_command(

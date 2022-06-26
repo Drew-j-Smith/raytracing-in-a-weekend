@@ -10,17 +10,9 @@
 
 #include <spdlog/spdlog.h>
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-
-#include <gl/glew.h>
-
-#include <GLFW/glfw3.h>
+#include "opengl_test.h"
 
 using arr_int_type = uint64_t;
-constexpr int windowStartWidth = 1280;
-constexpr int windowStartHeight = 720;
 
 int main([[maybe_unused]] int argc, char **argv) {
 
@@ -86,145 +78,57 @@ int main([[maybe_unused]] int argc, char **argv) {
 
     spdlog::info("success");
 
-    const char *glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    cl_double3 center{{0, 0, 0}};
+    cl_double3 lowLeft{{-1, -1, -1}};
+    constexpr auto temp_width = 512U;
+    constexpr auto temp_height = 512U;
+    constexpr auto two = 2.0;
+    std::vector<cl_double3> temp_arr(temp_width * temp_height);
+    std::vector<cl_double3> temp_res(temp_width * temp_height);
 
-    if (glfwInit() != GLFW_TRUE) {
-        spdlog::error("glfwInit failed");
-        return 1;
-    }
-
-    glfwSetErrorCallback([](int errCode, const char *msg) {
-        spdlog::error("glfw errored with code {}: {}", errCode, msg);
-    });
-
-    // Create window with graphics context
-    GLFWwindow *window = glfwCreateWindow(windowStartWidth, windowStartHeight,
-                                          "test", nullptr, nullptr);
-    if (window == nullptr) {
-        spdlog::error("glfwCreateWindow failed");
-        return 1;
-    }
-    glfwMakeContextCurrent(window);
-
-    if (glewInit() != GLEW_OK) {
-        spdlog::error("Failed to initialize OpenGL loader!");
-        return 1;
-    }
-
-    int screen_width;
-    int screen_height;
-    glfwGetFramebufferSize(window, &screen_width, &screen_height);
-    glViewport(0, 0, screen_width, screen_height);
-
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-
-    constexpr int textureWidth = 512;
-    constexpr int textureHeight = 512;
-    constexpr int textureInitialColor = 255;
-    constexpr int packSize = 3;
-    std::vector<uint8_t> temp(textureWidth * textureHeight * packSize,
-                              textureInitialColor);
-    for (uint64_t i = 0; i < textureWidth; ++i) {
-        for (uint64_t j = 0; j < textureHeight; ++j) {
-            temp[i * textureWidth * packSize + j * packSize] =
-                static_cast<uint8_t>(i / 2);
-            temp[i * textureWidth * packSize + j * packSize + 1] =
-                static_cast<uint8_t>(j / 2);
-            temp[i * textureWidth * packSize + j * packSize + 2] =
-                static_cast<uint8_t>((i + j) / 4);
+    for (auto i = 0U; i < temp_width; i++) {
+        for (auto j = 0U; j < temp_height; j++) {
+            auto idx = i + (temp_height - 1 - j) * temp_height;
+            temp_arr[idx].x = lowLeft.x + two / (temp_width - 1) * i;
+            temp_arr[idx].y = lowLeft.y + two / (temp_height - 1) * j;
+            temp_arr[idx].z = -1;
         }
     }
+    spdlog::info("created data");
 
-    glDebugMessageCallback(
-        [](GLenum source, GLenum type, GLuint id, GLenum severity,
-           [[maybe_unused]] GLsizei length, const GLchar *message,
-           [[maybe_unused]] const void *userParam) {
-            auto formated = fmt::format("opengl debug: source: {} type: {} id: "
-                                        "{} severity: {}\n message: {}",
-                                        source, type, id, severity, message);
-            switch (severity) {
-            case GL_DEBUG_SEVERITY_NOTIFICATION:
-                spdlog::info(formated);
-                break;
-            case GL_DEBUG_SEVERITY_LOW:
-                spdlog::warn(formated);
-                break;
-            case GL_DEBUG_SEVERITY_MEDIUM:
-                spdlog::warn(formated);
-                break;
-            case GL_DEBUG_SEVERITY_HIGH:
-                spdlog::error(formated);
-                break;
-            }
-        },
-        nullptr);
-    glEnable(GL_DEBUG_OUTPUT);
+    auto tempInputBuff =
+        cl::Buffer(queue, temp_arr.begin(), temp_arr.end(), true, false);
+    auto tempOutputBuff =
+        cl::Buffer(queue, temp_res.begin(), temp_res.end(), false, false);
+    spdlog::info("created cl::Buffer(s)");
 
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, textureWidth, textureHeight, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE, temp.data());
-    glBindTexture(GL_TEXTURE_2D, 0);
+    cl::Kernel kernel_raycast = cl::Kernel(program, "raycast");
+    kernel_raycast.setArg(0, center);
+    kernel_raycast.setArg(1, tempInputBuff);
+    kernel_raycast.setArg(2, tempOutputBuff);
+    spdlog::info("created cl::Kernel");
 
-    GLuint readFboId = 0;
-    glGenFramebuffers(1, &readFboId);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
-    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, texture, 0);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    queue.enqueueNDRangeKernel(kernel_raycast, cl::NullRange,
+                               cl::NDRange(temp_width * temp_height),
+                               cl::NullRange);
+    queue.finish();
 
-    while (glfwWindowShouldClose(window) != GLFW_TRUE) {
-        glfwPollEvents();
+    queue.enqueueReadBuffer(tempOutputBuff, CL_TRUE, 0,
+                            temp_res.size() * sizeof(cl_double3),
+                            temp_res.data());
+    spdlog::info("success");
 
-        int display_w;
-        int display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-
-        // if Changed
-        glTextureSubImage2D(texture, 0, 0, 0, textureWidth, textureHeight,
-                            GL_RGB, GL_UNSIGNED_BYTE, temp.data());
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
-        glBlitFramebuffer(0, 0, textureWidth, textureHeight, 0, 0, display_w,
-                          display_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
-        // feed inputs to dear imgui, start new frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        // render your GUI
-        ImGui::Begin("Demo window");
-        ImGui::Text("framerate %.2f", io.Framerate);
-        ImGui::End();
-
-        ImGui::ShowDemoWindow();
-
-        // Render dear imgui into screen
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glViewport(0, 0, display_w, display_h);
-        glfwSwapBuffers(window);
+    constexpr auto packSize = 3;
+    constexpr auto textureInitialColor = 0;
+    constexpr auto maxColor = 255.999;
+    std::vector<uint8_t> temp(temp_width * temp_height * packSize,
+                              textureInitialColor);
+    for (uint64_t i = 0; i < temp_width * temp_height; ++i) {
+        auto curr = temp_res[i];
+        temp[i * packSize] = static_cast<uint8_t>(curr.x * maxColor);
+        temp[i * packSize + 1] = static_cast<uint8_t>(curr.y * maxColor);
+        temp[i * packSize + 2] = static_cast<uint8_t>(curr.z * maxColor);
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
-
-    return 0;
+    opengl_test(temp);
 }
