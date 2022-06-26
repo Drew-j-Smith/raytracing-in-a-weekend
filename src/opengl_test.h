@@ -20,7 +20,8 @@
 constexpr int windowStartWidth = 1280;
 constexpr int windowStartHeight = 720;
 
-int opengl_test(std::vector<uint8_t> &data) {
+template <typename T>
+int opengl_test(std::vector<uint8_t> &data, T &&callable) {
     const char *glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -75,10 +76,10 @@ int opengl_test(std::vector<uint8_t> &data) {
                                         source, type, id, severity, message);
             switch (severity) {
             case GL_DEBUG_SEVERITY_NOTIFICATION:
-                spdlog::info(formated);
+                spdlog::debug(formated);
                 break;
             case GL_DEBUG_SEVERITY_LOW:
-                spdlog::warn(formated);
+                spdlog::info(formated);
                 break;
             case GL_DEBUG_SEVERITY_MEDIUM:
                 spdlog::warn(formated);
@@ -128,6 +129,7 @@ int opengl_test(std::vector<uint8_t> &data) {
         // render your GUI
         ImGui::Begin("Demo window");
         ImGui::Text("framerate %.2f", io.Framerate);
+        callable();
         ImGui::End();
 
         ImGui::ShowDemoWindow();

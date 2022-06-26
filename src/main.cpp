@@ -9,14 +9,11 @@
 #include <CL/cl2.hpp>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/stopwatch.h>
 
 #include "opengl_test.h"
 
-using arr_int_type = uint64_t;
-
 int main([[maybe_unused]] int argc, char **argv) {
-
-    constexpr auto arr_size = 1000;
 
     spdlog::set_level(spdlog::level::info);
 
@@ -30,17 +27,6 @@ int main([[maybe_unused]] int argc, char **argv) {
 
     auto queue = cl::CommandQueue(ctx, CL_QUEUE_PROFILING_ENABLE);
     spdlog::info("created cl::CommandQueue");
-
-    std::array<arr_int_type, arr_size> input;
-    for (std::size_t i = 0; i < input.size(); ++i) {
-        input[i] = static_cast<arr_int_type>(i);
-    }
-    auto inputBuff = cl::Buffer(queue, input.begin(), input.end(), true, false);
-
-    std::array<arr_int_type, arr_size> output;
-    auto outputBuff =
-        cl::Buffer(queue, output.begin(), output.end(), false, false);
-    spdlog::info("created cl::Buffer(s)");
 
     std::filesystem::path exec_dir(argv[0]);
     std::string cl_loc = exec_dir.parent_path().append("main.cl").string();
@@ -58,25 +44,6 @@ int main([[maybe_unused]] int argc, char **argv) {
         }
     }
     spdlog::info("created and compliled cl::Program");
-
-    cl::Kernel kernel_mult = cl::Kernel(program, "mult");
-    kernel_mult.setArg(0, inputBuff);
-    kernel_mult.setArg(1, outputBuff);
-    spdlog::info("created cl::Kernel");
-
-    queue.enqueueNDRangeKernel(kernel_mult, cl::NullRange,
-                               cl::NDRange(arr_size), cl::NullRange);
-    queue.finish();
-
-    queue.enqueueReadBuffer(outputBuff, CL_TRUE, 0,
-                            output.size() * sizeof(arr_int_type),
-                            output.data());
-
-    for (auto i : output) {
-        spdlog::debug("{}", i);
-    }
-
-    spdlog::info("success");
 
     cl_double3 center{{0, 0, 0}};
     cl_double3 lowLeft{{-1, -1, -1}};
@@ -108,27 +75,35 @@ int main([[maybe_unused]] int argc, char **argv) {
     kernel_raycast.setArg(2, tempOutputBuff);
     spdlog::info("created cl::Kernel");
 
-    queue.enqueueNDRangeKernel(kernel_raycast, cl::NullRange,
-                               cl::NDRange(temp_width * temp_height),
-                               cl::NullRange);
-    queue.finish();
-
-    queue.enqueueReadBuffer(tempOutputBuff, CL_TRUE, 0,
-                            temp_res.size() * sizeof(cl_double3),
-                            temp_res.data());
-    spdlog::info("success");
-
     constexpr auto packSize = 3;
     constexpr auto textureInitialColor = 0;
     constexpr auto maxColor = 255.999;
     std::vector<uint8_t> temp(temp_width * temp_height * packSize,
                               textureInitialColor);
-    for (uint64_t i = 0; i < temp_width * temp_height; ++i) {
-        auto curr = temp_res[i];
-        temp[i * packSize] = static_cast<uint8_t>(curr.x * maxColor);
-        temp[i * packSize + 1] = static_cast<uint8_t>(curr.y * maxColor);
-        temp[i * packSize + 2] = static_cast<uint8_t>(curr.z * maxColor);
-    }
 
-    opengl_test(temp);
+    std::array<float, 4> color1{1.0F, 1.0F, 1.0F, 1.0F};
+    constexpr auto color2_r = 0.5F;
+    constexpr auto color2_g = 0.7F;
+    std::array<float, 4> color2{color2_r, color2_g, 1.0F, 1.0F};
+
+    opengl_test(temp, [&]() {
+        ImGui::ColorEdit3("Color1##1", color1.data());
+        ImGui::ColorEdit3("Color2##2", color2.data());
+        cl_double3 currColor1{{color1[0], color1[1], color1[2]}};
+        cl_double3 currColor2{{color2[0], color2[1], color2[2]}};
+        kernel_raycast.setArg(3, currColor1);
+        kernel_raycast.setArg(4, currColor2);
+        queue.enqueueNDRangeKernel(kernel_raycast, cl::NullRange,
+                                   cl::NDRange(temp_width * temp_height),
+                                   cl::NullRange);
+        queue.enqueueReadBuffer(tempOutputBuff, CL_TRUE, 0,
+                                temp_res.size() * sizeof(cl_double3),
+                                temp_res.data());
+        for (uint64_t i = 0; i < temp_width * temp_height; ++i) {
+            auto curr = temp_res[i];
+            temp[i * packSize] = static_cast<uint8_t>(curr.x * maxColor);
+            temp[i * packSize + 1] = static_cast<uint8_t>(curr.y * maxColor);
+            temp[i * packSize + 2] = static_cast<uint8_t>(curr.z * maxColor);
+        }
+    });
 }
