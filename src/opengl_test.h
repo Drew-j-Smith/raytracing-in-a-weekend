@@ -20,7 +20,8 @@
 constexpr int windowStartWidth = 1280;
 constexpr int windowStartHeight = 720;
 
-template <typename T> int opengl_test(std::vector<float> &data, T &&callable) {
+template <typename T>
+int opengl_test(std::vector<cl_float4> &data, T &&callable) {
     const char *glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -95,7 +96,7 @@ template <typename T> int opengl_test(std::vector<float> &data, T &&callable) {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, textureWidth, textureHeight, 0,
-                 GL_RGB, GL_FLOAT, data.data());
+                 GL_RGBA, GL_FLOAT, data.data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLuint readFboId = 0;
@@ -112,12 +113,18 @@ template <typename T> int opengl_test(std::vector<float> &data, T &&callable) {
         int display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
+        glClearColor(0, 0, 0, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
+
         // if Changed
         glTextureSubImage2D(texture, 0, 0, 0, textureWidth, textureHeight,
-                            GL_RGB, GL_FLOAT, data.data());
+                            GL_RGBA, GL_FLOAT, data.data());
         glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
-        glBlitFramebuffer(0, 0, textureWidth, textureHeight, 0, 0, display_w,
-                          display_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glBlitFramebuffer(0, 0, std::min(textureWidth, display_w),
+                          std::min(textureHeight, display_h), 0,
+                          display_h - std::min(textureHeight, display_h),
+                          std::min(textureWidth, display_w), display_h,
+                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
         // feed inputs to dear imgui, start new frame

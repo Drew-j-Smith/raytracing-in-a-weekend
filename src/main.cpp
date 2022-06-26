@@ -51,7 +51,7 @@ int main([[maybe_unused]] int argc, char **argv) {
     constexpr auto temp_height = 512U;
     constexpr auto two = 2.0;
     std::vector<cl_double3> temp_arr(temp_width * temp_height);
-    std::vector<cl_double3> temp_res(temp_width * temp_height);
+    std::vector<cl_float4> temp_res(temp_width * temp_height, {{1, 1, 1, 1}});
 
     for (auto i = 0U; i < temp_width; i++) {
         for (auto j = 0U; j < temp_height; j++) {
@@ -75,35 +75,21 @@ int main([[maybe_unused]] int argc, char **argv) {
     kernel_raycast.setArg(2, tempOutputBuff);
     spdlog::info("created cl::Kernel");
 
-    constexpr auto packSize = 3;
-    constexpr auto textureInitialColor = 0;
-    constexpr auto maxColor = 255.999;
-    std::vector<float> temp(temp_width * temp_height * packSize,
-                            textureInitialColor);
-
-    std::array<float, 4> color1{1.0F, 1.0F, 1.0F, 1.0F};
+    cl_float4 color1{{1, 1, 1, 1}};
     constexpr auto color2_r = 0.5F;
     constexpr auto color2_g = 0.7F;
-    std::array<float, 4> color2{color2_r, color2_g, 1.0F, 1.0F};
+    cl_float4 color2{{color2_r, color2_g, 1, 1}};
 
-    opengl_test(temp, [&]() {
-        ImGui::ColorEdit3("Color1##1", color1.data());
-        ImGui::ColorEdit3("Color2##2", color2.data());
-        cl_double3 currColor1{{color1[0], color1[1], color1[2]}};
-        cl_double3 currColor2{{color2[0], color2[1], color2[2]}};
-        kernel_raycast.setArg(3, currColor1);
-        kernel_raycast.setArg(4, currColor2);
+    opengl_test(temp_res, [&]() {
+        ImGui::ColorEdit3("Color1##1", &color1.x);
+        ImGui::ColorEdit3("Color2##2", &color2.x);
+        kernel_raycast.setArg(3, color1);
+        kernel_raycast.setArg(4, color2);
         queue.enqueueNDRangeKernel(kernel_raycast, cl::NullRange,
                                    cl::NDRange(temp_width * temp_height),
                                    cl::NullRange);
         queue.enqueueReadBuffer(tempOutputBuff, CL_TRUE, 0,
-                                temp_res.size() * sizeof(cl_double3),
+                                temp_res.size() * sizeof(cl_float4),
                                 temp_res.data());
-        for (uint64_t i = 0; i < temp_width * temp_height; ++i) {
-            auto curr = temp_res[i];
-            temp[i * packSize] = curr.x;
-            temp[i * packSize + 1] = curr.y;
-            temp[i * packSize + 2] = curr.z;
-        }
     });
 }
