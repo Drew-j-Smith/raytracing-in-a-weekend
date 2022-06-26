@@ -78,8 +78,8 @@ int main([[maybe_unused]] int argc, char **argv) {
     constexpr auto packSize = 3;
     constexpr auto textureInitialColor = 0;
     constexpr auto maxColor = 255.999;
-    std::vector<uint8_t> temp(temp_width * temp_height * packSize,
-                              textureInitialColor);
+    std::vector<float> temp(temp_width * temp_height * packSize,
+                            textureInitialColor);
 
     std::array<float, 4> color1{1.0F, 1.0F, 1.0F, 1.0F};
     constexpr auto color2_r = 0.5F;
@@ -101,9 +101,9 @@ int main([[maybe_unused]] int argc, char **argv) {
                                 temp_res.data());
         for (uint64_t i = 0; i < temp_width * temp_height; ++i) {
             auto curr = temp_res[i];
-            temp[i * packSize] = static_cast<uint8_t>(curr.x * maxColor);
-            temp[i * packSize + 1] = static_cast<uint8_t>(curr.y * maxColor);
-            temp[i * packSize + 2] = static_cast<uint8_t>(curr.z * maxColor);
+            temp[i * packSize] = curr.x;
+            temp[i * packSize + 1] = curr.y;
+            temp[i * packSize + 2] = curr.z;
         }
     });
 }

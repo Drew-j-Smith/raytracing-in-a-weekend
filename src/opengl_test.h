@@ -20,8 +20,7 @@
 constexpr int windowStartWidth = 1280;
 constexpr int windowStartHeight = 720;
 
-template <typename T>
-int opengl_test(std::vector<uint8_t> &data, T &&callable) {
+template <typename T> int opengl_test(std::vector<float> &data, T &&callable) {
     const char *glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -95,8 +94,8 @@ int opengl_test(std::vector<uint8_t> &data, T &&callable) {
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, textureWidth, textureHeight, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE, data.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, textureWidth, textureHeight, 0,
+                 GL_RGB, GL_FLOAT, data.data());
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLuint readFboId = 0;
@@ -115,7 +114,7 @@ int opengl_test(std::vector<uint8_t> &data, T &&callable) {
 
         // if Changed
         glTextureSubImage2D(texture, 0, 0, 0, textureWidth, textureHeight,
-                            GL_RGB, GL_UNSIGNED_BYTE, data.data());
+                            GL_RGB, GL_FLOAT, data.data());
         glBindFramebuffer(GL_READ_FRAMEBUFFER, readFboId);
         glBlitFramebuffer(0, 0, textureWidth, textureHeight, 0, 0, display_w,
                           display_h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
