@@ -55,7 +55,7 @@ int main([[maybe_unused]] int argc, char **argv) {
 
     for (auto i = 0U; i < temp_width; i++) {
         for (auto j = 0U; j < temp_height; j++) {
-            auto idx = i + (temp_height - 1 - j) * temp_height;
+            auto idx = i + j * temp_height;
             temp_arr[idx].x = lowLeft.x + two / (temp_width - 1) * i;
             temp_arr[idx].y = lowLeft.y + two / (temp_height - 1) * j;
             temp_arr[idx].z = -1;
