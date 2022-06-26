@@ -1,6 +1,12 @@
 
 #include "opencl-include/structs.h"
 
+int rand(long *seed) {
+    // java's implementation
+    *seed = ((*seed) * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+    return (*seed) >> 16;
+}
+
 bool hit_sphere(struct circle circle, struct ray ray, struct hit_record *record,
                 double t_min, double t_max) {
     double3 oc = ray.origin - circle.center;
