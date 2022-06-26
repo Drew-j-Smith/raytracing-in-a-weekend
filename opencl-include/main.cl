@@ -1,19 +1,5 @@
 
-struct ray {
-    double3 origin;
-    double3 direction;
-};
-
-struct hit_record {
-    double3 p;
-    double3 normal;
-    double t;
-};
-
-struct circle {
-    double3 center;
-    double radius;
-};
+#include "opencl-include/structs.h"
 
 bool hit_sphere(struct circle circle, struct ray ray, struct hit_record *record,
                 double t_min, double t_max) {

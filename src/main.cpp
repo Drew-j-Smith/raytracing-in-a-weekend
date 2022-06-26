@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/stopwatch.h>
 
+#include "../opencl-include/structs.h"
 #include "opengl_test.h"
 
 int main([[maybe_unused]] int argc, char **argv) {
@@ -29,13 +30,14 @@ int main([[maybe_unused]] int argc, char **argv) {
     spdlog::info("created cl::CommandQueue");
 
     std::filesystem::path exec_dir(argv[0]);
-    std::string cl_loc = exec_dir.parent_path().append("main.cl").string();
-    std::ifstream file(cl_loc);
-    std::string source((std::istreambuf_iterator<char>(file)),
-                       std::istreambuf_iterator<char>());
+    auto binary_dir = exec_dir.parent_path();
+    std::string source("#include \"opencl-include/main.cl\"");
 
     cl_int err;
-    cl::Program program(ctx, source, true, &err);
+    cl::Program program(ctx, source, false, &err);
+    std::string include_str = fmt::format("-I{}", binary_dir.string());
+    spdlog::info("include flag:{}", include_str);
+    err = program.build(include_str.c_str());
     if (err != CL_SUCCESS) {
         cl::BuildLogType log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>();
         for (const auto &pair : log) {
