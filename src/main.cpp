@@ -69,10 +69,16 @@ int main([[maybe_unused]] int argc, char **argv) {
     constexpr auto color2_r = 0.5F;
     constexpr auto color2_g = 0.7F;
     cl_float4 color2{{color2_r, color2_g, 1, 1}};
+    cl_float3 origin{{0, 0, 0}};
 
     opengl_test(temp_res, [&]() {
         ImGui::ColorEdit3("Color1##1", &color1.x);
         ImGui::ColorEdit3("Color2##2", &color2.x);
+        ImGui::SliderFloat3("XYZ##3", &origin.x, -100, 100, "%.3f",
+                            ImGuiSliderFlags_Logarithmic);
+        cam.origin = {{origin.x, origin.y, origin.z}};
+        cam.lower_left_corner = {{origin.x - 1, origin.y - 1, origin.z - 1}};
+        kernel_raycast.setArg(2, cam);
         kernel_raycast.setArg(3, color1);
         kernel_raycast.setArg(4, color2);
         queue.enqueueNDRangeKernel(kernel_raycast, cl::NullRange,
