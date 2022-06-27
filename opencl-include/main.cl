@@ -1,10 +1,16 @@
 
 #include "opencl-include/structs.h"
 
-int rand(long *seed) {
+int rand_int(long *seed) {
     // java's implementation
     *seed = ((*seed) * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
     return (*seed) >> 16;
+}
+
+double rand_double(long *seed) {
+    // java's implementation
+    double curr = ((double)(rand_int(seed))) / INT_MAX + 1;
+    return curr / 2;
 }
 
 bool hit_sphere(struct circle circle, struct ray ray, struct hit_record *record,
@@ -40,33 +46,45 @@ void kernel raycast(global float4 *res, uint width, struct camera cam,
     uint id = get_global_id(0);
     uint w_id = id % width;
     uint h_id = id / width;
+    long seed = id;
+    float4 curr_color = (0, 0, 0, 0);
 
-    double3 direction = cam.lower_left_corner +
-                        cam.horizontal * w_id / (width - 1) +
-                        cam.vertical * h_id / (height - 1) - cam.origin;
-    double3 normalized = normalize(direction);
-    float t = 0.5 + 0.5 * normalized.y;
-    res[id] = (1 - t) * color1 + t * color2;
+    int iterations = 20;
 
-    struct hit_record record;
-    struct hit_record temp_record;
-    struct ray ray = {cam.origin, normalized};
-    double t_min = 0.001;
-    double t_max = INFINITY;
-    bool hit = false;
-    int num_circles = 2;
-    struct circle circles[] = {{(double3)(0, 0, -1), 0.5},
-                               {(double3)(0, -100.5, -1), 100}};
-    for (int i = 0; i < num_circles; ++i) {
-        if (hit_sphere(circles[i], ray, &temp_record, t_min, t_max)) {
-            hit = true;
-            record = temp_record;
-            t_max = record.t;
+    for (int j = 0; j < iterations; j++) {
+        double3 direction =
+            cam.lower_left_corner +
+            cam.horizontal * (w_id + rand_double(&seed)) / (width - 1) +
+            cam.vertical * (h_id + +rand_double(&seed)) / (height - 1) -
+            cam.origin;
+        double3 normalized = normalize(direction);
+
+        struct hit_record record;
+        struct hit_record temp_record;
+        struct ray ray = {cam.origin, normalized};
+        double t_min = 0.001;
+        double t_max = INFINITY;
+        bool hit = false;
+        int num_circles = 2;
+        struct circle circles[] = {{(double3)(0, 0, -1), 0.5},
+                                   {(double3)(0, -100.5, -1), 100}};
+        for (int i = 0; i < num_circles; ++i) {
+            if (hit_sphere(circles[i], ray, &temp_record, t_min, t_max)) {
+                hit = true;
+                record = temp_record;
+                t_max = record.t;
+            }
+        }
+
+        if (hit) {
+            curr_color +=
+                0.5F * (float4)(record.normal.x + 1, record.normal.y + 1,
+                                record.normal.z + 1, 1);
+        } else {
+            float t = 0.5 + 0.5 * normalized.y;
+            curr_color += (1 - t) * color1 + t * color2;
         }
     }
 
-    if (hit) {
-        res[id] = 0.5F * (float4)(record.normal.x + 1, record.normal.y + 1,
-                                  record.normal.z + 1, 1);
-    }
+    res[id] = curr_color / iterations;
 }
