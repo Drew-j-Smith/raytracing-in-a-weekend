@@ -21,3 +21,10 @@ struct circle {
     double3_vec center;
     double radius;
 };
+
+struct camera {
+    double3_vec origin;
+    double3_vec lower_left_corner;
+    double3_vec horizontal;
+    double3_vec vertical;
+};

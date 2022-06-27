@@ -29,13 +29,16 @@ int main([[maybe_unused]] int argc, char **argv) {
     auto queue = cl::CommandQueue(ctx, CL_QUEUE_PROFILING_ENABLE);
     spdlog::info("created cl::CommandQueue");
 
+    // have to reload to invalidate cache on change
     std::filesystem::path exec_dir(argv[0]);
-    auto binary_dir = exec_dir.parent_path();
-    std::string source("#include \"opencl-include/main.cl\"");
+    auto binary_dir = exec_dir.parent_path().string();
+    std::ifstream file(binary_dir + "/opencl-include/main.cl");
+    std::string source((std::istreambuf_iterator<char>(file)),
+                       std::istreambuf_iterator<char>());
 
     cl_int err;
     cl::Program program(ctx, source, false, &err);
-    std::string include_str = fmt::format("-I{}", binary_dir.string());
+    std::string include_str = fmt::format("-I{}", binary_dir);
     spdlog::info("include flag:{}", include_str);
     err = program.build(include_str.c_str());
     if (err != CL_SUCCESS) {
@@ -47,34 +50,19 @@ int main([[maybe_unused]] int argc, char **argv) {
     }
     spdlog::info("created and compliled cl::Program");
 
-    cl_double3 center{{0, 0, 0}};
-    cl_double3 lowLeft{{-1, -1, -1}};
     constexpr auto temp_width = 512U;
     constexpr auto temp_height = 512U;
-    constexpr auto two = 2.0;
-    std::vector<cl_double3> temp_arr(temp_width * temp_height);
     std::vector<cl_float4> temp_res(temp_width * temp_height, {{1, 1, 1, 1}});
+    camera cam{{{0, 0, 0}}, {{-1, -1, -1}}, {{2, 0, 0}}, {{0, 2, 0}}};
 
-    for (auto i = 0U; i < temp_width; i++) {
-        for (auto j = 0U; j < temp_height; j++) {
-            auto idx = i + j * temp_height;
-            temp_arr[idx].x = lowLeft.x + two / (temp_width - 1) * i;
-            temp_arr[idx].y = lowLeft.y + two / (temp_height - 1) * j;
-            temp_arr[idx].z = -1;
-        }
-    }
-    spdlog::info("created data");
-
-    auto tempInputBuff =
-        cl::Buffer(queue, temp_arr.begin(), temp_arr.end(), true, false);
     auto tempOutputBuff =
         cl::Buffer(queue, temp_res.begin(), temp_res.end(), false, false);
     spdlog::info("created cl::Buffer(s)");
 
     cl::Kernel kernel_raycast = cl::Kernel(program, "raycast");
-    kernel_raycast.setArg(0, center);
-    kernel_raycast.setArg(1, tempInputBuff);
-    kernel_raycast.setArg(2, tempOutputBuff);
+    kernel_raycast.setArg(0, tempOutputBuff);
+    kernel_raycast.setArg(1, static_cast<cl_uint>(temp_width));
+    kernel_raycast.setArg(2, cam);
     spdlog::info("created cl::Kernel");
 
     cl_float4 color1{{1, 1, 1, 1}};

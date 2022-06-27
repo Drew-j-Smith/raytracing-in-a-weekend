@@ -34,17 +34,23 @@ bool hit_sphere(struct circle circle, struct ray ray, struct hit_record *record,
     return true;
 }
 
-void kernel raycast(const double3 start, global const double3 *direction,
-                    global float4 *res, const float4 color1,
-                    const float4 color2) {
+void kernel raycast(global float4 *res, uint width, struct camera cam,
+                    float4 color1, float4 color2) {
+    uint height = get_global_size(0) / width;
     uint id = get_global_id(0);
-    double3 normalized = normalize(direction[id]);
+    uint w_id = id % width;
+    uint h_id = id / width;
+
+    double3 direction = cam.lower_left_corner +
+                        cam.horizontal * w_id / (width - 1) +
+                        cam.vertical * h_id / (height - 1) - cam.origin;
+    double3 normalized = normalize(direction);
     float t = 0.5 + 0.5 * normalized.y;
     res[id] = (1 - t) * color1 + t * color2;
 
     struct hit_record record;
     struct hit_record temp_record;
-    struct ray ray = {start, normalized};
+    struct ray ray = {cam.origin, normalized};
     double t_min = 0.001;
     double t_max = INFINITY;
     bool hit = false;
