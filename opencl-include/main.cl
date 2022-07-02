@@ -13,12 +13,12 @@ double rand_double(long *seed) {
     return curr / 2;
 }
 
-bool hit_sphere(struct circle circle, struct ray ray, struct hit_record *record,
+bool hit_sphere(struct Circle circle, struct Ray ray, struct HitRecord *record,
                 double t_min, double t_max) {
-    double3 oc = ray.origin - circle.center;
-    double a = dot(ray.direction, ray.direction);
-    double b = dot(oc, ray.direction);
-    double c = dot(oc, oc) - circle.radius * circle.radius;
+    double3 oc = ray.m_origin - circle.m_center;
+    double a = dot(ray.m_direction, ray.m_direction);
+    double b = dot(oc, ray.m_direction);
+    double c = dot(oc, oc) - circle.m_radius * circle.m_radius;
     double discriminant = b * b - a * c;
     if (discriminant < 0) {
         return false;
@@ -32,15 +32,16 @@ bool hit_sphere(struct circle circle, struct ray ray, struct hit_record *record,
             return false;
     }
 
-    record->t = root;
-    double3 int_point = ray.origin + ray.direction * root;
-    record->p = int_point;
-    record->normal = normalize((int_point - circle.center) / circle.radius);
+    record->m_t = root;
+    double3 int_point = ray.m_origin + ray.m_direction * root;
+    record->m_p = int_point;
+    record->m_normal =
+        normalize((int_point - circle.m_center) / circle.m_radius);
 
     return true;
 }
 
-void kernel raycast(global float4 *res, uint width, struct camera cam,
+void kernel raycast(global float4 *res, uint width, struct Camera cam,
                     float4 color1, float4 color2) {
     uint height = get_global_size(0) / width;
     uint id = get_global_id(0);
@@ -53,33 +54,33 @@ void kernel raycast(global float4 *res, uint width, struct camera cam,
 
     for (int j = 0; j < iterations; j++) {
         double3 direction =
-            cam.lower_left_corner +
-            cam.horizontal * (w_id + rand_double(&seed)) / (width - 1) +
-            cam.vertical * (h_id + +rand_double(&seed)) / (height - 1) -
-            cam.origin;
+            cam.m_lower_left_corner +
+            cam.m_horizontal * (w_id + rand_double(&seed)) / (width - 1) +
+            cam.m_vertical * (h_id + +rand_double(&seed)) / (height - 1) -
+            cam.m_origin;
         double3 normalized = normalize(direction);
 
-        struct hit_record record;
-        struct hit_record temp_record;
-        struct ray ray = {cam.origin, normalized};
+        struct HitRecord record;
+        struct HitRecord temp_record;
+        struct Ray ray = {cam.m_origin, normalized};
         double t_min = 0.001;
         double t_max = INFINITY;
         bool hit = false;
         int num_circles = 2;
-        struct circle circles[] = {{(double3)(0, 0, -1), 0.5},
+        struct Circle circles[] = {{(double3)(0, 0, -1), 0.5},
                                    {(double3)(0, -100.5, -1), 100}};
         for (int i = 0; i < num_circles; ++i) {
             if (hit_sphere(circles[i], ray, &temp_record, t_min, t_max)) {
                 hit = true;
                 record = temp_record;
-                t_max = record.t;
+                t_max = record.m_t;
             }
         }
 
         if (hit) {
             curr_color +=
-                0.5F * (float4)(record.normal.x + 1, record.normal.y + 1,
-                                record.normal.z + 1, 1);
+                0.5F * (float4)(record.m_normal.x + 1, record.m_normal.y + 1,
+                                record.m_normal.z + 1, 1);
         } else {
             float t = 0.5 + 0.5 * normalized.y;
             curr_color += (1 - t) * color1 + t * color2;
