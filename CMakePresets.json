@@ -20,12 +20,18 @@
             }
         },
         {
-            "name": "clang",
+            "name": "clang-user",
             "inherits": "base",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++",
-                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "clang",
+            "inherits": "clang-user",
+            "cacheVariables": {
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy; --header-filter=${sourceDir}/src",
                 "CMAKE_CXX_CPPCHECK": "cppcheck;--enable=all;--suppress=missingIncludeSystem"
             }
         },
@@ -42,6 +48,10 @@
         {
             "name": "msvc",
             "configurePreset": "msvc"
+        },
+        {
+            "name": "clang-user",
+            "configurePreset": "clang-user"
         },
         {
             "name": "clang",

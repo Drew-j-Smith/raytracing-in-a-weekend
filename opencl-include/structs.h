@@ -1,35 +1,36 @@
 
-#ifdef __cplusplus
+#if defined __OPENCL_C_VERSION__ || defined __OPENCL_CPP_VERSION__
+#define double3_impl double3
+#else
 #include <CL/cl2.hpp>
 extern "C" {
-#define double3_vec cl_double3 // NOLINT
-#else
-#define double3_vec double3
+#define double3_impl cl_double3 // NOLINT
 #endif
 
 struct Ray {
-    double3_vec m_origin;
-    double3_vec m_direction;
+    double3_impl m_origin;
+    double3_impl m_direction;
 };
 
 struct HitRecord {
-    double3_vec m_p;
-    double3_vec m_normal;
+    double3_impl m_p;
+    double3_impl m_normal;
     double m_t;
 };
 
 struct Circle {
-    double3_vec m_center;
+    double3_impl m_center;
     double m_radius;
 };
 
 struct Camera {
-    double3_vec m_origin;
-    double3_vec m_lower_left_corner;
-    double3_vec m_horizontal;
-    double3_vec m_vertical;
+    double3_impl m_origin;
+    double3_impl m_lower_left_corner;
+    double3_impl m_horizontal;
+    double3_impl m_vertical;
 };
 
-#ifdef __cplusplus
+#if defined __OPENCL_C_VERSION__ || defined __OPENCL_CPP_VERSION__
+#else
 }
 #endif

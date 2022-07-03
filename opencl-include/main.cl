@@ -78,9 +78,9 @@ void kernel raycast(global float4 *res, uint width, struct Camera cam,
         }
 
         if (hit) {
-            curr_color +=
-                0.5F * (float4)(record.m_normal.x + 1, record.m_normal.y + 1,
-                                record.m_normal.z + 1, 1);
+            curr_color += 0.5F * (float4)((float)record.m_normal.x + 1,
+                                          (float)record.m_normal.y + 1,
+                                          (float)record.m_normal.z + 1, 1);
         } else {
             float t = 0.5 + 0.5 * normalized.y;
             curr_color += (1 - t) * color1 + t * color2;

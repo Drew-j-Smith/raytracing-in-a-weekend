@@ -20,6 +20,9 @@ int main([[maybe_unused]] int argc, char **argv) {
     try {
         spdlog::set_level(spdlog::level::info);
 
+        spdlog::info("Platform version: {}",
+                     cl::Platform::getDefault().getInfo<CL_PLATFORM_VERSION>());
+
         auto ctx = cl::Context(
             CL_DEVICE_TYPE_DEFAULT, nullptr, // NOLINT
             [](const char *errinfo, [[maybe_unused]] const void *private_info,
@@ -31,12 +34,10 @@ int main([[maybe_unused]] int argc, char **argv) {
         auto queue = cl::CommandQueue(ctx, CL_QUEUE_PROFILING_ENABLE); // NOLINT
         spdlog::info("created cl::CommandQueue");
 
-        // have to reload to invalidate cache on change
         std::filesystem::path exec_dir(argv[0]); // NOLINT
         auto binary_dir = exec_dir.parent_path().string();
         std::ifstream file(binary_dir + "/opencl-include/main.cl");
-        std::string source((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>());
+        std::string source((std::istreambuf_iterator<char>(file)), {});
 
         cl_int err{};
         cl::Program program(ctx, source, false, &err);
