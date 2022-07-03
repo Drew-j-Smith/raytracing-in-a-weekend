@@ -58,7 +58,7 @@ int opengl_test(std::vector<cl_float4> &data, T &&callable) {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO &imgui_io = ImGui::GetIO();
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
@@ -138,7 +138,8 @@ int opengl_test(std::vector<cl_float4> &data, T &&callable) {
 
         // render your GUI
         ImGui::Begin("Demo window");
-        std::string formated = std::format("framerate {:.3f}", io.Framerate);
+        std::string formated =
+            std::format("framerate {:.3f}", imgui_io.Framerate);
         ImGui::TextUnformatted(formated.c_str());
         callable();
         ImGui::End();

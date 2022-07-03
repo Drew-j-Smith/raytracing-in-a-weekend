@@ -10,6 +10,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_executable(${PROJECT_NAME}  src/main.cpp)
 
@@ -21,5 +22,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE OpenCL::OpenCL spdlog::spdlog imgu
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${CMAKE_SOURCE_DIR}/opencl-include
-                $<TARGET_FILE_DIR:${PROJECT_NAME}>/opencl-include)
+                ${CMAKE_SOURCE_DIR}/include
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>/include)

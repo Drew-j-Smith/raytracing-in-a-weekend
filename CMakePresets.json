@@ -31,7 +31,7 @@
             "name": "clang",
             "inherits": "clang-user",
             "cacheVariables": {
-                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy; --header-filter=${sourceDir}/src",
+                "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--config-file=${sourceDir}/.clang-tidy",
                 "CMAKE_CXX_CPPCHECK": "cppcheck;--enable=all;--suppress=missingIncludeSystem"
             }
         },

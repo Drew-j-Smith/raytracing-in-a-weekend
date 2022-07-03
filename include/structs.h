@@ -1,4 +1,7 @@
 
+#ifndef STRUCTS_H
+#define STRUCTS_H
+
 #if defined __OPENCL_C_VERSION__ || defined __OPENCL_CPP_VERSION__
 #define double3_impl double3
 #else
@@ -18,11 +21,6 @@ struct HitRecord {
     double m_t;
 };
 
-struct Circle {
-    double3_impl m_center;
-    double m_radius;
-};
-
 struct Camera {
     double3_impl m_origin;
     double3_impl m_lower_left_corner;
@@ -33,4 +31,6 @@ struct Camera {
 #if defined __OPENCL_C_VERSION__ || defined __OPENCL_CPP_VERSION__
 #else
 }
+#endif
+
 #endif

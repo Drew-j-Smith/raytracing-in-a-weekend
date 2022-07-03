@@ -12,8 +12,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/stopwatch.h>
 
-#include "../opencl-include/structs.h"
 #include "opengl_test.h"
+#include "structs.h"
 
 int main([[maybe_unused]] int argc, char **argv) {
 
@@ -23,25 +23,27 @@ int main([[maybe_unused]] int argc, char **argv) {
         spdlog::info("Platform version: {}",
                      cl::Platform::getDefault().getInfo<CL_PLATFORM_VERSION>());
 
-        auto ctx = cl::Context(
-            CL_DEVICE_TYPE_DEFAULT, nullptr, // NOLINT
-            [](const char *errinfo, [[maybe_unused]] const void *private_info,
-               [[maybe_unused]] size_t cb, [[maybe_unused]] void *user_data) {
-                spdlog::error("opencl error: {}", errinfo);
-            });
+        auto ctx = cl::Context(CL_DEVICE_TYPE_DEFAULT, nullptr, // NOLINT
+                               [](const char *errinfo,
+                                  [[maybe_unused]] const void *private_info,
+                                  [[maybe_unused]] size_t cb_size,
+                                  [[maybe_unused]] void *user_data) {
+                                   spdlog::error("opencl error: {}", errinfo);
+                               });
         spdlog::info("created cl::Context");
 
         auto queue = cl::CommandQueue(ctx, CL_QUEUE_PROFILING_ENABLE); // NOLINT
         spdlog::info("created cl::CommandQueue");
 
-        std::filesystem::path exec_dir(argv[0]); // NOLINT
-        auto binary_dir = exec_dir.parent_path().string();
-        std::ifstream file(binary_dir + "/opencl-include/main.cl");
-        std::string source((std::istreambuf_iterator<char>(file)), {});
+        std::filesystem::path exec_path(argv[0]); // NOLINT
+        auto exec_dir = exec_path.parent_path().string();
+        std::string source(
+            "#include \"main.cl\"\nconstant char* time() { return \"" __DATE__
+                __TIME__ "\"; }"); // invalidates cache on recompile
 
         cl_int err{};
         cl::Program program(ctx, source, false, &err);
-        std::string include_str = std::format("-I{}", binary_dir);
+        std::string include_str = std::format("-I{}/include", exec_dir);
         spdlog::info("include flag:{}", include_str);
         err = program.build(include_str.c_str());
         if (err != CL_SUCCESS) {
